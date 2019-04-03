@@ -90,6 +90,20 @@ StringSet ParsedDerivation::getRequiredSystemFeatures() const
     return res;
 }
 
+StringSet ParsedDerivation::ignoreSystemFeaturesConsumption(StringSet features) const
+{
+    StringSet res;
+    for (auto & i : features) {
+        size_t n = i.find(":");
+        if (n == i.npos)
+            res.insert(i);
+        else
+            printMsg(lvlChatty, format("warning: the amount of the consumable feature '%s' is ignored in derivation '%s'") % i % drvPath);
+            res.insert(string(i, 0, n));
+    }
+    return res;
+}
+
 bool ParsedDerivation::canBuildLocally() const
 {
     if (drv.platform != settings.thisSystem.get()
@@ -97,7 +111,8 @@ bool ParsedDerivation::canBuildLocally() const
         && !drv.isBuiltin())
         return false;
 
-    for (auto & feature : getRequiredSystemFeatures())
+    StringSet requiredSystemFeatures = ignoreSystemFeaturesConsumption(getRequiredSystemFeatures());
+    for (auto & feature : requiredSystemFeatures)
         if (!settings.systemFeatures.get().count(feature)) return false;
 
     return true;
